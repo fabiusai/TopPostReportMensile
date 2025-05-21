@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Report mensile post più visualizzati</title>
+  <style>
+    :root { --primary: #00529F; --secondary: #FFD700; --bg: #f9f9f9; --text: #333; --card-bg: #fff; }
+    body { margin: 0; font-family: "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--text); }
+    header { background: var(--primary); color: #fff; padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+    .controls { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+    .controls input[type=file] { padding: 0.5rem; }
+    .controls button { background: var(--secondary); border: none; padding: 0.6rem 1.2rem; cursor: pointer; font-weight: bold; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card { background: var(--card-bg); padding: 1.5rem; margin-bottom: 2rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .card h2 { margin-top: 0; color: var(--primary); }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { padding: 0.75rem; border-bottom: 1px solid #e0e0e0; text-align: left; vertical-align: middle; }
+    th { background: var(--primary); color: #fff; font-weight: normal; }
+    button.copy-btn { margin-left: 0.5rem; background: transparent; color: var(--primary); border: none; font-size: 1rem; cursor: pointer; }
+    button.copy-btn:focus { outline: none; }
+    a.link-btn { color: var(--primary); text-decoration: underline; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <header><h1>Report mensile post più visualizzati</h1></header>
+  <div class="container">
+    <div class="controls">
+      <input type="file" id="file-input" accept=".xlsx, .xls" />
+      <button id="process-btn">Elabora dati</button>
+    </div>
+    <div id="report"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    const fileInput = document.getElementById('file-input');
+    const processBtn = document.getElementById('process-btn');
+    let workbookData = null;
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = evt => {
+        const data = new Uint8Array(evt.target.result);
+        workbookData = XLSX.read(data, { type: 'array' });
+      };
+      reader.readAsArrayBuffer(file);
+    });
+    processBtn.addEventListener('click', () => {
+      if (!workbookData) { alert('Seleziona prima un file Excel'); return; }
+      const ws = workbookData.Sheets[workbookData.SheetNames[0]];
+      const data = XLSX.utils.sheet_to_json(ws, { raw: false });
+      renderReport(data);
+    });
+    function formatDate(text) {
+      let d, m, y;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(text)) { [y, m, d] = text.split('-'); }
+      else if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) { [d, m, y] = text.split('/'); }
+      else { const dt = new Date(text); if (!isNaN(dt)) { d = dt.getDate(); m = dt.getMonth()+1; y=dt.getFullYear(); } else return text; }
+      d = d.toString().padStart(2,'0'); m = m.toString().padStart(2,'0'); return d+'/'+m+'/'+y.toString().slice(-2);
+    }
+    function formatNumber(value) {
+      const num = Number(value)||0;
+      if (num<1000) return num.toString();
+      else if (num<1000000) return Math.round(num/1000)+'K';
+      else return (num/1000000).toFixed(2).replace('.',',')+'M';
+    }
+    function renderReport(data) {
+      const filtered = data.filter(r=>String(r.Campagna).trim().toLowerCase()==='editoriale');
+      const report = document.getElementById('report'); report.innerHTML='';
+      const topics = {};
+      filtered.forEach(r=>{ const arg=r.Argomento||''; const vis=Number(r.Visualizzazioni)||0; topics[arg]=topics[arg]||{count:0,sum:0}; topics[arg].count++; topics[arg].sum+=vis; });
+      const top=Object.entries(topics).map(([arg,s])=>({arg,count:s.count,sum:s.sum})).sort((a,b)=>b.sum-a.sum).slice(0,3);
+      const tc=document.createElement('div'); tc.className='card'; tc.innerHTML='<h2>Argomenti più visualizzati</h2>';
+      const t1=document.createElement('table'); t1.innerHTML='<thead><tr><th>Argomenti</th><th>Numero post</th><th>Visualizzazioni</th></tr></thead>';
+      const b1=document.createElement('tbody');
+      top.forEach(i=>{ const tr=document.createElement('tr'); [i.arg,i.count,formatNumber(i.sum)].forEach(v=>{ const td=document.createElement('td'); const span=document.createElement('span'); span.textContent=v; td.appendChild(span); td.appendChild(createCopyBtn(v)); tr.appendChild(td);} ); b1.appendChild(tr);});
+      t1.appendChild(b1); tc.appendChild(t1); report.appendChild(tc);
+      [...new Set(filtered.map(r=>r.Canale.toLowerCase()))].forEach(chan=>{ const posts=filtered.filter(r=>r.Canale.toLowerCase()===chan); if(!posts.length) return; const name=chan.charAt(0).toUpperCase()+chan.slice(1); const card=document.createElement('div'); card.className='card'; card.innerHTML=`<h2>Top post ${name}</h2>`; card.appendChild(createSection('Post più visualizzati',posts,'Visualizzazioni')); card.appendChild(createSection('Post con più interazioni',posts,'Interazioni')); report.appendChild(card);});
+    }
+    function createSection(title,posts,metric){ const sec=document.createElement('div'); const h3=document.createElement('h3'); h3.textContent=title; sec.appendChild(h3); const sorted=posts.sort((a,b)=>Number(b[metric])-Number(a[metric])).slice(0,3); const tbl=document.createElement('table'); tbl.innerHTML='<thead><tr><th>Label</th><th>Argomento</th><th>Data</th><th>Copy</th><th>Visualizzazioni</th><th>Interazioni</th><th>Link</th></tr></thead>'; const body=document.createElement('tbody'); sorted.forEach(r=>{ const tr=document.createElement('tr'); [String(r.Label).toUpperCase(),r.Argomento,formatDate(r.Data),r.Copy,formatNumber(r.Visualizzazioni),formatNumber(r.Interazioni)].forEach(v=>{ const td=document.createElement('td'); const span=document.createElement('span'); span.textContent=v; td.appendChild(span); td.appendChild(createCopyBtn(v)); tr.appendChild(td);} ); const td=document.createElement('td'); const a=document.createElement('a'); a.href=r.Link; a.target='_blank'; a.textContent='Link'; a.className='link-btn'; td.appendChild(a); tr.appendChild(td); body.appendChild(tr); }); tbl.appendChild(body); sec.appendChild(tbl); return sec; }
+    function createCopyBtn(val){ const btn=document.createElement('button'); btn.className='copy-btn'; btn.textContent='⧉'; btn.title='Copia'; btn.addEventListener('click',()=>{ navigator.clipboard.writeText(val).then(()=>{ btn.textContent='✓'; setTimeout(()=>btn.textContent='⧉',1000); }); }); return btn; }
+  </script>
+</body>
+</html>
