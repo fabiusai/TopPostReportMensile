@@ -8,111 +8,38 @@
   <link rel="icon" href="favicon.ico" type="image/png" />
   <!-- Poste.it palette: blu e giallo -->
   <style>
-    :root {
-      --primary: #00529F;
-      --secondary: #FFD700;
-      --bg: #f9f9f9;
-      --text: #333;
-      --card-bg: #fff;
-    }
-    body {
-      margin: 0;
-      font-family: "Helvetica Neue", Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-    }
-    header {
-      background: var(--primary);
-      color: #fff;
-      padding: 1rem;
-      text-align: center;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    .container {
-      max-width: 1200px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-    }
-    .controls {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 2rem;
-    }
-    .controls input[type=file] {
-      padding: 0.5rem;
-    }
-    .controls button {
-      background: var(--secondary);
-      border: none;
-      padding: 0.6rem 1.2rem;
-      cursor: pointer;
-      font-weight: bold;
-      border-radius: 4px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    .card {
-      background: var(--card-bg);
-      padding: 1.5rem;
-      margin-bottom: 2rem;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    }
-    .card h2 {
-      margin-top: 0;
-      color: var(--primary);
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-    th, td {
-      padding: 0.75rem;
-      border-bottom: 1px solid #e0e0e0;
-      text-align: left;
-      vertical-align: middle;
-    }
-    th {
-      background: var(--primary);
-      color: #fff;
-      font-weight: normal;
-    }
-    button.copy-btn {
-      margin-left: 0.5rem;
-      background: transparent;
-      color: var(--primary);
-      border: none;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-    button.copy-btn:focus {
-      outline: none;
-    }
-    a.link-btn {
-      color: var(--primary);
-      text-decoration: underline;
-      font-weight: bold;
-    }
-    .note {
-      font-size: 0.9rem;
-      font-style: italic;
-      margin-top: 1rem;
-    }
+    :root { --primary: #00529F; --secondary: #FFD700; --bg: #f9f9f9; --text: #333; --card-bg: #fff; }
+    body { margin: 0; font-family: "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--text); }
+    header { background: var(--primary); color: #fff; padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+    .controls { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+    .controls input[type=file] { padding: 0.5rem; }
+    .controls button { background: var(--secondary); border: none; padding: 0.6rem 1.2rem; cursor: pointer; font-weight: bold; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .card { background: var(--card-bg); padding: 1.5rem; margin-bottom: 2rem; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+    .card h2 { margin-top: 0; color: var(--primary); }
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    th, td { padding: 0.75rem; border-bottom: 1px solid #e0e0e0; text-align: left; vertical-align: middle; }
+    th { background: var(--primary); color: #fff; font-weight: normal; }
+    button.copy-btn { margin-left: 0.5rem; background: transparent; color: var(--primary); border: none; font-size: 1rem; cursor: pointer; }
+    button.copy-btn:focus { outline: none; }
+    button.save-table { margin: 0.5rem 0; background: var(--primary); color: #fff; border: none; padding: 0.5rem 1rem; font-size: 0.9rem; cursor: pointer; border-radius: 4px; }
+    a.link-btn { color: var(--primary); text-decoration: underline; font-weight: bold; }
+    .note { font-size: 0.9rem; font-style: italic; margin-top: 1rem; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Report mensile post più visualizzati</h1>
-  </header>
+  <header><h1>Report mensile post più visualizzati</h1></header>
   <div class="container">
+
     <div class="controls">
       <input type="file" id="file-input" accept=".xlsx, .xls" />
       <button id="process-btn">Elabora dati</button>
     </div>
+
     <div id="report"></div>
+
   </div>
-  <!-- SheetJS -->
+
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script>
     const fileInput = document.getElementById('file-input');
@@ -120,149 +47,157 @@
     let workbookData = null;
 
     fileInput.addEventListener('change', e => {
-      const file = e.target.files[0];
-      if (!file) return;
+      const file = e.target.files[0]; if (!file) return;
       const reader = new FileReader();
       reader.onload = evt => {
-        const data = new Uint8Array(evt.target.result);
-        workbookData = XLSX.read(data, { type: 'array' });
+        workbookData = XLSX.read(new Uint8Array(evt.target.result), { type: 'array' });
       };
       reader.readAsArrayBuffer(file);
     });
 
     processBtn.addEventListener('click', () => {
-      if (!workbookData) {
-        alert('Seleziona prima un file Excel');
-        return;
-      }
-      const ws = workbookData.Sheets[workbookData.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json(ws, { raw: false });
+      if (!workbookData) { alert('Seleziona prima un file Excel'); return; }
+      const data = XLSX.utils.sheet_to_json(workbookData.Sheets[workbookData.SheetNames[0]], { raw: false });
       renderReport(data);
     });
 
     function formatDate(text) {
       let d, m, y;
-      if (/^\d{4}-\d{2}-\d{2}$/.test(text)) {
-        [y, m, d] = text.split('-');
-      } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) {
-        [d, m, y] = text.split('/');
-      } else {
-        const dt = new Date(text);
-        if (!isNaN(dt)) {
-          d = dt.getDate();
-          m = dt.getMonth() + 1;
-          y = dt.getFullYear();
-        } else {
-          return text;
-        }
-      }
-      d = d.toString().padStart(2, '0');
-      m = m.toString().padStart(2, '0');
-      return d + '/' + m + '/' + y.toString().slice(-2);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(text)) [y,m,d] = text.split('-');
+      else if (/^\d{2}\/\d{2}\/\d{4}$/.test(text)) [d,m,y] = text.split('/');
+      else { const dt = new Date(text); if (!isNaN(dt)) { d=dt.getDate(); m=dt.getMonth()+1; y=dt.getFullYear(); } else return text; }
+      d = d.toString().padStart(2,'0'); m = m.toString().padStart(2,'0'); return `${d}/${m}/${y.toString().slice(-2)}`;
     }
 
-    function formatNumber(value) {
-      const num = Number(value) || 0;
-      if (num < 1000) {
-        return num.toString();
-      } else if (num < 1000000) {
-        const k = Math.round(num / 1000);
-        return k + 'K';
-      } else {
-        const m = num / 1000000;
-        return m.toFixed(2).replace('.', ',') + 'M';
-      }
+    function formatNumber(num) {
+      num = Number(num) || 0;
+      if (num < 1000) return num.toString();
+      if (num < 1000000) return `${Math.round(num/1000)}K`;
+      return `${(num/1000000).toFixed(2).replace('.',',')}M`;
     }
 
     function renderReport(data) {
       const filtered = data.filter(r => String(r.Campagna).trim().toLowerCase() === 'editoriale');
-      const report = document.getElementById('report');
-      report.innerHTML = '';
+      const report = document.getElementById('report'); report.innerHTML = '';
 
       // Calcolo post pubblicati
-      const totalCount = filtered.length;
-      const fbCounts = {
-        PosteItaliane: filtered.filter(r => r.Canale && r.Canale.trim().toLowerCase() === 'facebook').length,
-        Postepay: filtered.filter(r => r.Canale && r.Canale.trim().toLowerCase() === 'facebook postepay').length,
-        PosteMobile: filtered.filter(r => r.Canale && r.Canale.trim().toLowerCase() === 'facebook postemobile').length
+      const fbArr = ['facebook','facebook postepay','facebook postemobile'];
+      const igArr = ['instagram','instagram postepay','instagram postemobile'];
+      const totals = {
+        'Numero post complessivi': filtered.length,
+        'Facebook': filtered.filter(r=>fbArr.includes(r.Canale.trim().toLowerCase())).length,
+        'Twitter': filtered.filter(r=>r.Canale.trim().toLowerCase()==='twitter').length,
+        'Linkedin': filtered.filter(r=>r.Canale.trim().toLowerCase()==='linkedin').length,
+        'Instagram': filtered.filter(r=>igArr.includes(r.Canale.trim().toLowerCase())).length,
+        'Youtube': filtered.filter(r=>r.Canale.trim().toLowerCase()==='youtube').length
       };
-      const igCounts = {
-        PosteItaliane: filtered.filter(r => r.Canale && r.Canale.trim().toLowerCase() === 'instagram').length,
-        Postepay: filtered.filter(r => r.Canale && r.Canale.trim().toLowerCase() === 'instagram postepay').length,
-        PosteMobile: filtered.filter(r => r.Canale && r.Canale.trim().toLowerCase() === 'instagram postemobile').length
-      };
-      const channelTotals = {
-        Facebook: fbCounts.PosteItaliane + fbCounts.Postepay + fbCounts.PosteMobile,
-        Twitter: filtered.filter(r => r.Canale && r.Canale.trim().toLowerCase() === 'twitter').length,
-        Linkedin: filtered.filter(r => r.Canale && r.Canale.trim().toLowerCase() === 'linkedin').length,
-        Instagram: igCounts.PosteItaliane + igCounts.Postepay + igCounts.PosteMobile,
-        Youtube: filtered.filter(r => r.Canale && r.Canale.trim().toLowerCase() === 'youtube').length
-      };
-      const calcCard = document.createElement('div');
-      calcCard.className = 'card';
-      calcCard.innerHTML = '<h2>Calcolo post pubblicati</h2>';
-      const tblCalc = document.createElement('table');
-      tblCalc.innerHTML = '<thead><tr><th>Descrizione</th><th>Valore</th></tr></thead>';
-      const tbCalc = document.createElement('tbody');
-      // Totale
-      const trTotal = document.createElement('tr');
-      const tdDescTotal = document.createElement('td'); tdDescTotal.textContent = 'Numero complessivo dei post editoriali è';
-      const tdValTotal = document.createElement('td'); tdValTotal.appendChild(document.createTextNode(totalCount)); tdValTotal.appendChild(createCopyBtn(totalCount));
-      trTotal.appendChild(tdDescTotal); trTotal.appendChild(tdValTotal); tbCalc.appendChild(trTotal);
-      // Per canale
-      Object.entries(channelTotals).forEach(([chan, cnt]) => {
+      const calcCard = document.createElement('div'); calcCard.className = 'card'; calcCard.innerHTML = '<h2>Calcolo post pubblicati</h2>';
+      const tblCalc = document.createElement('table'); tblCalc.innerHTML = '<thead><tr><th>Descrizione</th><th>Valore</th></tr></thead>';
+      const bodyCalc = document.createElement('tbody');
+      Object.entries(totals).forEach(([desc,val]) => {
         const tr = document.createElement('tr');
-        const tdDesc = document.createElement('td'); tdDesc.textContent = chan;
-        const tdVal = document.createElement('td'); tdVal.appendChild(document.createTextNode(cnt)); tdVal.appendChild(createCopyBtn(cnt));
-        tr.appendChild(tdDesc); tr.appendChild(tdVal); tbCalc.appendChild(tr);
+        const td1 = document.createElement('td'); td1.textContent = desc; tr.appendChild(td1);
+        const td2 = document.createElement('td'); td2.textContent = val; td2.appendChild(createCopyBtn(val)); tr.appendChild(td2);
+        bodyCalc.appendChild(tr);
       });
-      tblCalc.appendChild(tbCalc); calcCard.appendChild(tblCalc);
-      // Note dettaglio
-      const note = document.createElement('p');
-      note.className = 'note';
-      note.textContent = `Dettaglio post Facebook: Poste Italiane (${fbCounts.PosteItaliane}), Postepay (${fbCounts.Postepay}), PosteMobile (${fbCounts.PosteMobile}). Dettaglio post Instagram: Poste Italiane (${igCounts.PosteItaliane}), Postepay (${igCounts.Postepay}), PosteMobile (${igCounts.PosteMobile}).`;
-      calcCard.appendChild(note);
-      report.appendChild(calcCard);
+      tblCalc.appendChild(bodyCalc); calcCard.appendChild(tblCalc); report.appendChild(calcCard);
+
+      // Post Istituzionali
+      const istit = filtered.filter(r => String(r.Istituzionale).trim() === '1');
+      const datiI = {
+        'Numero post': istit.length,
+        'Visualizzazioni': istit.reduce((s,r)=>s+Number(r.Visualizzazioni)||0,0),
+        'Interazioni': istit.reduce((s,r)=>s+Number(r.Interazioni)||0,0),
+        'Like e reazioni': istit.reduce((s,r)=>s+Number(r['Like e reazioni'])||0,0),
+        'Condivisioni': istit.reduce((s,r)=>s+Number(r.Condivisioni)||0,0)
+      };
+      const istCard = document.createElement('div'); istCard.className = 'card'; istCard.innerHTML = '<h2>Post Istituzionali</h2>';
+      const tblI = document.createElement('table'); tblI.innerHTML = '<thead><tr><th>Voce</th><th>Valore</th></tr></thead>';
+      const bodyI = document.createElement('tbody');
+      Object.entries(datiI).forEach(([k,v]) => {
+        const tr = document.createElement('tr');
+        const td1 = document.createElement('td'); td1.textContent = k; tr.appendChild(td1);
+        const td2 = document.createElement('td'); td2.textContent = formatNumber(v); td2.appendChild(createCopyBtn(formatNumber(v))); tr.appendChild(td2);
+        bodyI.appendChild(tr);
+      });
+      tblI.appendChild(bodyI); istCard.appendChild(tblI);
+
+      // Best performers
+      const agg = {};
+      istit.forEach(r => {
+        const arg = r.Argomento || '';
+        if (!agg[arg]) agg[arg] = {sumV:0,sumI:0,sumL:0,sumC:0, link: r.Link};
+        agg[arg].sumV += Number(r.Visualizzazioni) || 0;
+        agg[arg].sumI += Number(r.Interazioni) || 0;
+        agg[arg].sumL += Number(r['Like e reazioni']) || 0;
+        agg[arg].sumC += Number(r.Condivisioni) || 0;
+      });
+      const top5 = Object.entries(agg).map(([arg,v])=>({arg,...v})).sort((a,b)=>b.sumV-a.sumV).slice(0,5);
+      const perfDiv = document.createElement('div');
+      const h3 = document.createElement('h3'); h3.textContent = 'Best performers'; perfDiv.appendChild(h3);
+      const btnSave = document.createElement('button'); btnSave.className='save-table'; btnSave.textContent='Salva tabella';
+      btnSave.addEventListener('click', ()=> {
+        const headers = ['Argomento','Visualizzazioni','Interazioni','Like e reazioni','Condivisioni'];
+        const rows = top5.map(o => [
+          o.arg,
+          formatNumber(o.sumV),
+          formatNumber(o.sumI),
+          formatNumber(o.sumL),
+          formatNumber(o.sumC)
+        ]);
+        let csvContent = headers.join(',') + '\n' + rows.map(r=>r.join(',')).join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'best_performers.csv'; document.body.appendChild(a);
+        a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+      perfDiv.appendChild(btnSave);
+      const tblP = document.createElement('table'); tblP.innerHTML = '<thead><tr><th>Argomento</th><th>Visualizzazioni</th><th>Interazioni</th><th>Like e reazioni</th><th>Condivisioni</th><th>Link</th></tr></thead>';
+      const bodyP = document.createElement('tbody');
+      top5.forEach(o => {
+        const tr = document.createElement('tr');
+        [[o.arg],[formatNumber(o.sumV)],[formatNumber(o.sumI)],[formatNumber(o.sumL)],[formatNumber(o.sumC)]].forEach(([val])=>{
+          const td = document.createElement('td'); td.textContent = val; td.appendChild(createCopyBtn(val)); tr.appendChild(td);
+        });
+        const tdL = document.createElement('td'); const aL = document.createElement('a'); aL.href=o.link; aL.target='_blank'; aL.textContent='Link'; aL.className='link-btn'; tdL.appendChild(aL); tr.appendChild(tdL);
+        bodyP.appendChild(tr);
+      });
+      tblP.appendChild(bodyP); perfDiv.appendChild(tblP);
+      istCard.appendChild(perfDiv);
+      report.appendChild(istCard);
 
       // Argomenti più visualizzati
       const topics = {};
       filtered.forEach(r => {
         const arg = r.Argomento || '';
         const vis = Number(r.Visualizzazioni) || 0;
-        topics[arg] = topics[arg] || { count: 0, sum: 0 };
-        topics[arg].count += 1;
+        if (!topics[arg]) topics[arg] = {count:0,sum:0};
+        topics[arg].count++;
         topics[arg].sum += vis;
       });
       const topTopics = Object.entries(topics)
-        .map(([arg, s]) => ({ arg, count: s.count, sum: s.sum }))
-        .sort((a, b) => b.sum - a.sum)
-        .slice(0, 3);
-      const topicsCard = document.createElement('div');
-      topicsCard.className = 'card';
-      topicsCard.innerHTML = '<h2>Argomenti più visualizzati</h2>';
-      const t1 = document.createElement('table');
-      t1.innerHTML = '<thead><tr><th>Argomenti</th><th>Numero post</th><th>Visualizzazioni</th></tr></thead>';
-      const b1 = document.createElement('tbody');
-      topTopics.forEach(item => {
+        .map(([arg,s])=>({arg,count:s.count,sum:s.sum}))
+        .sort((a,b)=>b.sum-a.sum)
+        .slice(0,3);
+      const topicsCard = document.createElement('div'); topicsCard.className='card'; topicsCard.innerHTML='<h2>Argomenti più visualizzati</h2>';
+      const tblT = document.createElement('table'); tblT.innerHTML='<thead><tr><th>Argomenti</th><th>Numero post</th><th>Visualizzazioni</th></tr></thead>';
+      const bodyT = document.createElement('tbody');
+      topTopics.forEach(i=>{
         const tr = document.createElement('tr');
-        addCell(tr, item.arg, false);
-        addCell(tr, item.count, false);
-        addCell(tr, formatNumber(item.sum), true);
-        b1.appendChild(tr);
+        const vals = [i.arg,i.count,formatNumber(i.sum)];
+        vals.forEach(v=>{ const td=document.createElement('td'); td.textContent=v; td.appendChild(createCopyBtn(v)); tr.appendChild(td); });
+        bodyT.appendChild(tr);
       });
-      t1.appendChild(b1);
-      topicsCard.appendChild(t1);
-      report.appendChild(topicsCard);
+      tblT.appendChild(bodyT); topicsCard.appendChild(tblT); report.appendChild(topicsCard);
 
-      // Sezioni per canali
-      const channels = [...new Set(filtered.map(r => (r.Canale || '').toLowerCase()))];
-      channels.forEach(chan => {
-        const posts = filtered.filter(r => (r.Canale || '').toLowerCase() === chan);
+      // Sezioni per canali social
+      const channels = [...new Set(filtered.map(r=>r.Canale.trim().toLowerCase()))];
+      channels.forEach(chan=>{
+        const posts = filtered.filter(r=>r.Canale.trim().toLowerCase()===chan);
         if (!posts.length) return;
-        const name = chan.charAt(0).toUpperCase() + chan.slice(1);
-        const card = document.createElement('div');
-        card.className = 'card';
-        card.innerHTML = `<h2>Top post ${name}</h2>`;
+        const name = chan.charAt(0).toUpperCase()+chan.slice(1);
+        const card = document.createElement('div'); card.className='card'; card.innerHTML=`<h2>Top post ${name}</h2>`;
         card.appendChild(createSection('Post più visualizzati', posts, 'Visualizzazioni'));
         card.appendChild(createSection('Post con più interazioni', posts, 'Interazioni'));
         report.appendChild(card);
@@ -271,52 +206,25 @@
 
     function createSection(title, posts, metric) {
       const sec = document.createElement('div');
-      const h3 = document.createElement('h3'); h3.textContent = title;
-      sec.appendChild(h3);
-      const sorted = posts.sort((a, b) => (Number(b[metric]) || 0) - (Number(a[metric]) || 0)).slice(0, 3);
-      const tbl = document.createElement('table');
-      tbl.innerHTML = '<thead><tr><th>Label</th><th>Argomento</th><th>Data</th><th>Copy</th><th>Visualizzazioni</th><th>Interazioni</th><th>Link</th></tr></thead>';
+      const h3 = document.createElement('h3'); h3.textContent = title; sec.appendChild(h3);
+      const sorted = [...posts].sort((a,b)=>Number(b[metric]) - Number(a[metric])).slice(0,3);
+      const tbl = document.createElement('table'); tbl.innerHTML = '<thead><tr><th>Label</th><th>Argomento</th><th>Data</th><th>Copy</th><th>Visualizzazioni</th><th>Interazioni</th><th>Link</th></tr></thead>';
       const body = document.createElement('tbody');
-      sorted.forEach(r => {
+      sorted.forEach(r=>{
         const tr = document.createElement('tr');
-        addCell(tr, String(r.Label).toUpperCase(), false);
-        addCell(tr, r.Argomento, false);
-        addCell(tr, formatDate(r.Data), false);
-        addCell(tr, r.Copy, false);
-        addCell(tr, formatNumber(r.Visualizzazioni), true);
-        addCell(tr, formatNumber(r.Interazioni), true);
-        const td = document.createElement('td');
-        const a = document.createElement('a'); a.href = r.Link; a.target = '_blank'; a.textContent = 'Link'; a.className = 'link-btn';
-        td.appendChild(a); tr.appendChild(td);
+        const values = [r.Label.toUpperCase(), r.Argomento, formatDate(r.Data), r.Copy, formatNumber(r.Visualizzazioni), formatNumber(r.Interazioni)];
+        values.forEach(v=>{ const td=document.createElement('td'); td.textContent=v; td.appendChild(createCopyBtn(v)); tr.appendChild(td); });
+        const tdL = document.createElement('td'); const a=document.createElement('a'); a.href=r.Link; a.target='_blank'; a.textContent='Link'; a.className='link-btn'; tdL.appendChild(a); tr.appendChild(tdL);
         body.appendChild(tr);
       });
-      tbl.appendChild(body);
-      sec.appendChild(tbl);
-      return sec;
-    }
-
-    function addCell(tr, value, isMetric) {
-      const td = document.createElement('td');
-      const span = document.createElement('span');
-      span.textContent = value;
-      td.appendChild(span);
-      td.appendChild(createCopyBtn(value));
-      tr.appendChild(td);
+      tbl.appendChild(body); sec.appendChild(tbl); return sec;
     }
 
     function createCopyBtn(val) {
-      const btn = document.createElement('button');
-      btn.className = 'copy-btn';
-      btn.textContent = '⧉'; btn.title = 'Copia';
-      btn.addEventListener('click', () => {
-        navigator.clipboard.writeText(val).then(() => {
-          btn.textContent = '✓';
-          setTimeout(() => btn.textContent = '⧉', 1000);
-        });
-      });
+      const btn = document.createElement('button'); btn.className='copy-btn'; btn.textContent='⧉'; btn.title='Copia';
+      btn.addEventListener('click', ()=>{ navigator.clipboard.writeText(val).then(()=>{ btn.textContent='✓'; setTimeout(()=>btn.textContent='⧉',1000); }); });
       return btn;
     }
   </script>
 </body>
 </html>
-
